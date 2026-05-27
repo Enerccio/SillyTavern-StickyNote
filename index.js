@@ -6,7 +6,7 @@ class StickyNote {
 
     constructor({ note }) {
         this.note = note;
-        this._messageId = 0;
+        this._messageId = null;
     }
 
     setMessageId(messageId) {
@@ -22,7 +22,7 @@ class StickyNote {
     }
 
     save() {
-        if (this._messageId) {
+        if (this._messageId !== null) {
             const ctx = SillyTavern.getContext();
             const message = ctx.chat[this._messageId];
             setData(message, "stickyNote", this.toJson());
