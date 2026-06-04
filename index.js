@@ -1,5 +1,6 @@
 import {event_types, eventSource} from "/scripts/events.js";
 import {getChatMetadata, getData, setChatMetadata, setData, getMessageDiv} from "./utils.js";
+import {chat} from "/script.js";
 
 class StickyNote {
 
@@ -72,7 +73,7 @@ function getStickyNoteRaw(depth) {
 
 
 function imprintStickyNote(textData, chatMessage, context = {}) {
-    if (context?.imprint) {
+    if (context?.imprint && chatMessage.role === 'user') {
         const msgIndex = context.messageId;
         const ctx = SillyTavern.getContext();
         if (!ctx.chat || ctx.chat.length === 0) {
