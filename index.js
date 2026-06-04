@@ -70,6 +70,22 @@ function getStickyNoteRaw(depth) {
     return totallyNew;
 }
 
+
+function imprintStickyNote(textData, chatMessage, context = {}) {
+    if (context?.imprint) {
+        const msgIndex = context.messageId;
+        const ctx = SillyTavern.getContext();
+        if (!ctx.chat || ctx.chat.length === 0) {
+            return [textData, true];
+        }
+        const stickyNote = getStickyNoteRaw(msgIndex);
+        const note = stickyNote?.note;
+        const noteText = context.postprocess ? context.postprocess(noteText) : note;
+        return [true, textData + "\n\n" + noteText];
+    }
+    return [true, textData];
+}
+
 async function processPrompt(data) {
     let stickyNote = getStickyNote();
 
@@ -262,4 +278,6 @@ $(async function () {
         renderMessageIcons();
         initPromptAreaUI();
     }, 800);
+
+    window.enerccio_compat?.messageProcessor.registerHandler(imprintStickyNote);
 });
