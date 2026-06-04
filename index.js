@@ -81,9 +81,9 @@ function imprintStickyNote(textData, chatMessage, context = {}) {
         const stickyNote = getStickyNoteRaw(msgIndex);
         const note = stickyNote?.note;
         const noteText = context.postprocess ? context.postprocess(note) : note;
-        return [true, textData + "\n\n" + noteText];
+        return [textData + "\n\n" + noteText, true];
     }
-    return [true, textData];
+    return [textData, true];
 }
 
 async function processPrompt(data) {
