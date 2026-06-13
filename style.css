@@ -4,6 +4,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    order: 5;
 }
 
 /* Ensure the button matches your theme's native icon button sizes and padding */

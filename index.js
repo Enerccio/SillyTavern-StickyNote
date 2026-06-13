@@ -255,7 +255,7 @@ function initPromptAreaUI() {
     });
 
     // Append it cleanly into the left form section right next to the extensionsMenuButton
-    $("#leftSendForm").append($promptBtnContainer);
+    $promptBtnContainer.insertAfter('#extensionsMenuButton');
 }
 
 $(async function () {
@@ -274,11 +274,10 @@ $(async function () {
         initPromptAreaUI();
     });
 
-    // Fallback UI generation buffer
-    setTimeout(() => {
+    eventSource.on(event_types.APP_INITIALIZED, async () => {
         renderMessageIcons();
         initPromptAreaUI();
-    }, 800);
+    });
 
     window.enerccio_compat?.messageProcessor.registerHandler(imprintStickyNote);
 });
