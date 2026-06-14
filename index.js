@@ -1,11 +1,11 @@
 import {event_types, eventSource} from "/scripts/events.js";
-import {getChatMetadata, getData, setChatMetadata, setData, getMessageDiv} from "./utils.js";
-import {chat} from "/script.js";
+import {getChatMetadata, getData, getMessageDiv, setChatMetadata, setData} from "./utils.js";
 
 class StickyNote {
 
-    constructor({ note }) {
+    constructor({ note, prepend }) {
         this.note = note || "";
+        this.prepend = prepend ?? false;
         this._messageId = null;
     }
 
@@ -14,7 +14,10 @@ class StickyNote {
     }
 
     toJson() {
-        return { note: this.note };
+        return {
+            note: this.note,
+            prepend: this.prepend
+        };
     }
 
     static fromJson(json) {
@@ -65,7 +68,7 @@ function getStickyNoteRaw(depth) {
         return sn;
     }
 
-    const totallyNew = new StickyNote({ note: "" });
+    const totallyNew = new StickyNote({ note: "", prepend: false });
     totallyNew.setMessageId(null);
     setChatMetadata("initialPrompt", totallyNew.toJson(), false);
     return totallyNew;
@@ -81,19 +84,35 @@ function imprintStickyNote(textData, chatMessage, context = {}) {
         }
         const stickyNote = getStickyNoteRaw(msgIndex);
         const note = stickyNote?.note;
+        if (!note) return [textData, true];
+
         const noteText = context.postprocess ? context.postprocess(note) : note;
-        return [textData + "\n\n" + noteText, true];
+
+        // Handle prepending instead of appending if flag is true
+        if (stickyNote.prepend) {
+            return [noteText + "\n\n" + textData, true];
+        } else {
+            return [textData + "\n\n" + noteText, true];
+        }
     }
     return [textData, true];
 }
 
 async function processPrompt(data) {
-    let stickyNote = getStickyNote();
+    if (!data.chat || data.chat.length === 0) return;
+
+    const stickyNoteObj = getStickyNoteRaw(data.chat.length - 1);
+    const stickyNote = stickyNoteObj?.note;
 
     if (stickyNote) {
         for (let i = data.chat.length - 1; i >= 0; i--) {
             if (data.chat[i].role === 'user') {
-                data.chat[i].content += `\n\n${stickyNote}`;
+                // Prepend or append text block conditionally based on setting field
+                if (stickyNoteObj.prepend) {
+                    data.chat[i].content = `${stickyNote}\n\n${data.chat[i].content}`;
+                } else {
+                    data.chat[i].content += `\n\n${stickyNote}`;
+                }
                 return;
             }
         }
@@ -121,12 +140,17 @@ function openStickyNotePopup(targetElement, currentSnObj, isEditable) {
                 <span>Sticky Note</span>
                 <span class="enerccio_stickynote-popup-close fa-solid fa-xmark"></span>
             </div>
+            <div class="enerccio_stickynote-popup-controls" style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px; font-size: calc(var(--mainFontSize, 15px) * 0.8); opacity: 0.85;">
+                <input type="checkbox" id="enerccio_stickynote-prepend-chk" ${!isEditable ? 'disabled' : ''} style="margin: 0; cursor: pointer;" />
+                <label for="enerccio_stickynote-prepend-chk" style="margin: 0; cursor: pointer; color: var(--SmartThemeBodyColor, #fff); user-select: none;">Prepend to prompt</label>
+            </div>
             <textarea class="enerccio_stickynote-textarea" ${!isEditable ? 'readonly' : ''}></textarea>
         </div>
     `;
 
     const $popup = $(popupHtml);
     $popup.find(".enerccio_stickynote-textarea").val(currentSnObj.note);
+    $popup.find("#enerccio_stickynote-prepend-chk").prop("checked", !!currentSnObj.prepend);
 
     // Append directly to body to clear parent flex/overflow limitations safely
     $("body").append($popup);
@@ -135,13 +159,30 @@ function openStickyNotePopup(targetElement, currentSnObj, isEditable) {
     const $button = $(targetElement);
     const offset = $button.offset();
     const buttonWidth = $button.outerWidth();
+    const buttonHeight = $button.outerHeight();
     const popupWidth = $popup.outerWidth();
     const popupHeight = $popup.outerHeight();
 
-    // Calculate vertical alignment (float right above the icon)
+    // Default to opening upwards (float above the icon)
     let topPosition = offset.top - popupHeight - 8;
     // Calculate horizontal alignment (right-aligned to the icon button edge)
     let leftPosition = offset.left + buttonWidth - popupWidth;
+
+    // --- BOUNDS & LOCATION HANDLING ---
+    const scrollTop = $(window).scrollTop();
+    const isMainChatBtn = $button.attr('id') === 'enerccio_stickynote-prompt-btn';
+
+    // Force downwards position for the main chat button or if opening upwards clips off the top viewport screen
+    if (isMainChatBtn || topPosition < scrollTop) {
+        topPosition = offset.top + buttonHeight + 8;
+
+        // Safety fallback: If opening downwards clips past the bottom viewport window boundary,
+        // flip it back upwards ONLY if there is enough space available above.
+        const windowHeight = $(window).height();
+        if (topPosition + popupHeight > scrollTop + windowHeight && (offset.top - popupHeight - 8) >= scrollTop) {
+            topPosition = offset.top - popupHeight - 8;
+        }
+    }
 
     // Apply the fixed window screen positioning styles
     $popup.css({
@@ -162,9 +203,15 @@ function openStickyNotePopup(targetElement, currentSnObj, isEditable) {
 
     if (isEditable) {
         const $textarea = $popup.find(".enerccio_stickynote-textarea");
+        const $checkbox = $popup.find("#enerccio_stickynote-prepend-chk");
 
         $textarea.on("input", function() {
             currentSnObj.note = $(this).val();
+            currentSnObj.save();
+        });
+
+        $checkbox.on("change", function() {
+            currentSnObj.prepend = $(this).is(":checked");
             currentSnObj.save();
         });
 
@@ -188,35 +235,31 @@ window.enerccio_stickynote_triggerView = function(element, messageIndex, event) 
     openStickyNotePopup(element, sn, false);
 };
 
-function renderMessageIcons() {
-    const ctx = SillyTavern.getContext();
-    if (!ctx.chat) return;
+function renderMessageIcon(ctx, i) {
+    const $msgDiv = getMessageDiv(i);
+    if (!$msgDiv) return;
 
-    for (let i = 0; i < ctx.chat.length; i++) {
-        const $msgDiv = getMessageDiv(i);
-        if (!$msgDiv) continue;
+    // Clean old buttons to handle rerenders safely
+    $msgDiv.find(".enerccio_stickynote-icon-btn").remove();
 
-        // Clean old buttons to handle rerenders safely
-        $msgDiv.find(".enerccio_stickynote-icon-btn").remove();
+    const currentSn = getStickyNoteRaw(i);
+    let isChanged = false;
 
-        const currentSn = getStickyNoteRaw(i);
-        let isChanged = false;
-
-        if (i > 0) {
-            const previousSn = getStickyNoteRaw(i - 1);
-            if (currentSn.note !== previousSn.note) {
-                isChanged = true;
-            }
+    if (i > 0) {
+        const previousSn = getStickyNoteRaw(i - 1);
+        if (currentSn.note !== previousSn.note) {
+            isChanged = true;
         }
+    }
 
-        const baseClasses = "mes_button enerccio_stickynote-icon-btn interactable";
-        const iconClass = isChanged
-            ? `${baseClasses} fa-solid fa-sticky-note enerccio_stickynote-changed`
-            : `${baseClasses} fa-regular fa-sticky-note`;
+    const baseClasses = "mes_button enerccio_stickynote-icon-btn interactable";
+    const iconClass = isChanged
+        ? `${baseClasses} fa-solid fa-sticky-note enerccio_stickynote-changed`
+        : `${baseClasses} fa-regular fa-sticky-note`;
 
-        // FIX: Added direct global function invocation lookup inside an inline onclick property
-        // Added pointer-events: auto !important to guarantee click detection tracking
-        const $iconBtn = $(`
+    // FIX: Added direct global function invocation lookup inside an inline onclick property
+    // Added pointer-events: auto !important to guarantee click detection tracking
+    const $iconBtn = $(`
             <div title="View Sticky Note"
                  class="${iconClass}"
                  tabindex="0"
@@ -225,8 +268,16 @@ function renderMessageIcons() {
                  style="position: relative; display: inline-flex; margin-left: 4px; pointer-events: auto !important;"></div>
         `);
 
-        // Insert safely right AFTER the container to bypass flashing cycles
-        $msgDiv.find(".mes_buttons").after($iconBtn);
+    // Insert safely right AFTER the container to bypass flashing cycles
+    $msgDiv.find(".mes_buttons").after($iconBtn);
+}
+
+function renderMessageIcons() {
+    const ctx = SillyTavern.getContext();
+    if (!ctx.chat) return;
+
+    for (let i = 0; i < ctx.chat.length; i++) {
+        renderMessageIcon(ctx, i);
     }
 }
 
