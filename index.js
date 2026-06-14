@@ -101,7 +101,7 @@ function imprintStickyNote(textData, chatMessage, context = {}) {
 async function processPrompt(data) {
     if (!data.chat || data.chat.length === 0) return;
 
-    const stickyNoteObj = getStickyNoteRaw(data.chat.length - 1);
+    const stickyNoteObj = getStickyNoteRaw(SillyTavern.getContext().chat.length - 1);
     const stickyNote = stickyNoteObj?.note;
 
     if (stickyNote) {
