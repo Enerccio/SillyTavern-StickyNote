@@ -1,5 +1,10 @@
 import {event_types, eventSource} from "/scripts/events.js";
 import {getChatMetadata, getData, getMessageDiv, setChatMetadata, setData} from "./utils.js";
+import {renderExtensionTemplateAsync} from "/scripts/extensions.js";
+import {
+    EXTENSION_NAME,
+    EXTENSION_PATH, VERSION
+} from "./conf.js";
 
 class StickyNote {
 
@@ -130,27 +135,23 @@ async function copyStickyNote(messageId) {
     renderMessageIcons();
 }
 
-function openStickyNotePopup(targetElement, currentSnObj, isEditable) {
+async function openStickyNotePopup(targetElement, currentSnObj, isEditable) {
     // Clear any dangling/existing popups first
     $(".enerccio_stickynote-popup").remove();
 
-    const popupHtml = `
-        <div class="enerccio_stickynote-popup">
-            <div class="enerccio_stickynote-popup-header">
-                <span>Sticky Note</span>
-                <span class="enerccio_stickynote-popup-close fa-solid fa-xmark"></span>
-            </div>
-            <div class="enerccio_stickynote-popup-controls" style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px; font-size: calc(var(--mainFontSize, 15px) * 0.8); opacity: 0.85;">
-                <input type="checkbox" id="enerccio_stickynote-prepend-chk" ${!isEditable ? 'disabled' : ''} style="margin: 0; cursor: pointer;" />
-                <label for="enerccio_stickynote-prepend-chk" style="margin: 0; cursor: pointer; color: var(--SmartThemeBodyColor, #fff); user-select: none;">Prepend to prompt</label>
-            </div>
-            <textarea class="enerccio_stickynote-textarea" ${!isEditable ? 'readonly' : ''}></textarea>
-        </div>
-    `;
+    const popupHtml = await renderExtensionTemplateAsync(
+        EXTENSION_PATH,
+        'popup',
+        { title: EXTENSION_NAME, version: VERSION }
+    );
 
     const $popup = $(popupHtml);
     $popup.find(".enerccio_stickynote-textarea").val(currentSnObj.note);
     $popup.find("#enerccio_stickynote-prepend-chk").prop("checked", !!currentSnObj.prepend);
+
+    // Set editable property rules clean via DOM injection
+    $popup.find("#enerccio_stickynote-prepend-chk").prop("disabled", !isEditable);
+    $popup.find(".enerccio_stickynote-textarea").prop("readonly", !isEditable);
 
     // Append directly to body to clear parent flex/overflow limitations safely
     $("body").append($popup);
@@ -165,8 +166,6 @@ function openStickyNotePopup(targetElement, currentSnObj, isEditable) {
 
     // Default to opening upwards (float above the icon)
     let topPosition = offset.top - popupHeight - 8;
-    // Calculate horizontal alignment (right-aligned to the icon button edge)
-    let leftPosition = offset.left + buttonWidth - popupWidth;
 
     // --- BOUNDS & LOCATION HANDLING ---
     const scrollTop = $(window).scrollTop();
@@ -182,6 +181,16 @@ function openStickyNotePopup(targetElement, currentSnObj, isEditable) {
         if (topPosition + popupHeight > scrollTop + windowHeight && (offset.top - popupHeight - 8) >= scrollTop) {
             topPosition = offset.top - popupHeight - 8;
         }
+    }
+
+    // --- HORIZONTAL DIRECTION TRACKING ---
+    let leftPosition;
+    if (isMainChatBtn) {
+        // Bottom side primary controls: align left edge with button tracking, letting it stretch out towards the right
+        leftPosition = offset.left;
+    } else {
+        // Historical chat log messages: align right edges together, keeping the frame pushed back left
+        leftPosition = offset.left + buttonWidth - popupWidth;
     }
 
     // Apply the fixed window screen positioning styles
@@ -221,7 +230,7 @@ function openStickyNotePopup(targetElement, currentSnObj, isEditable) {
     }
 }
 
-window.enerccio_stickynote_triggerView = function(element, messageIndex, event) {
+window.enerccio_stickynote_triggerView = async function(element, messageIndex, event) {
     if (event) {
         event.stopPropagation();
         event.preventDefault();
@@ -232,7 +241,7 @@ window.enerccio_stickynote_triggerView = function(element, messageIndex, event) 
     const sn = getStickyNoteRaw(messageIndex);
 
     // Mount the non-modal lookup view popup directly onto the target element icon node frame
-    openStickyNotePopup(element, sn, false);
+    await openStickyNotePopup(element, sn, false);
 };
 
 function renderMessageIcon(ctx, i) {
@@ -295,14 +304,14 @@ function initPromptAreaUI() {
         </div>
     `);
 
-    $promptBtnContainer.find("#enerccio_stickynote-prompt-btn").on("click", function(e) {
+    $promptBtnContainer.find("#enerccio_stickynote-prompt-btn").on("click", async function(e) {
         e.stopPropagation();
         const ctx = SillyTavern.getContext();
         const currentDepth = ctx.chat ? ctx.chat.length - 1 : -1;
         const sn = getStickyNoteRaw(currentDepth);
 
         // Opens the editable non-modal popup relative to this button
-        openStickyNotePopup(this, sn, true);
+        await openStickyNotePopup(this, sn, true);
     });
 
     // Append it cleanly into the left form section right next to the extensionsMenuButton

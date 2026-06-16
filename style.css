@@ -14,9 +14,9 @@
 
 /* Non-modal popup layout configuration */
 .enerccio_stickynote-popup {
-    width: 280px;
+    width: 420px;                                            /* Increased from 280px for a larger, modern dashboard profile */
     height: auto;                                            /* Prevents stretching out across the screen space */
-    max-height: 250px;                                       /* Locks the box to a clean, compact dashboard profile */
+    max-height: 380px;                                       /* Expanded from 250px to make readability much cleaner */
     background-color: var(--SmartThemeBlurTintColor, #222);
     border: 1px solid var(--SmartThemeBorderColor, #444);
     border-radius: 10px;
@@ -24,7 +24,7 @@
     z-index: 99999 !important;
     display: flex;
     flex-direction: column;
-    padding: 8px;
+    padding: 12px;                                           /* Slightly adjusted room padding */
     cursor: default;
 
     font-family: var(--mainFontFamily, "Noto Sans", sans-serif);
@@ -41,9 +41,9 @@
     font-weight: bold;
     text-transform: uppercase; /* Ensures uniform tracking design across small overlay panels */
     letter-spacing: 0.05em;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
     border-bottom: 1px solid var(--SmartThemeBorderColor, #444);
-    padding-bottom: 4px;
+    padding-bottom: 6px;
     color: var(--SmartThemeBodyColor, #fff); /* Pulls native color profile settings */
     opacity: 0.85;
 }
@@ -59,13 +59,13 @@
 .enerccio_stickynote-textarea {
     width: 100%;
     flex: 1;                                                 /* Allows input box to naturally fill the restricted box height */
-    min-height: 100px;
+    min-height: 180px;                                       /* Increased from 100px to ensure deep data scrolling entry */
     resize: vertical;
     background: var(--black30a, rgba(0, 0, 0, 0.3));
     color: var(--SmartThemeBodyColor, #fff);
     border: 1px solid var(--SmartThemeBorderColor, #444);
     border-radius: 5px;
-    padding: 6px;
+    padding: 8px;
 
     font-family: var(--mainFontFamily, inherit);
     font-size: calc(var(--mainFontSize, 15px) * 0.95);
