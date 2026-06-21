@@ -16,7 +16,7 @@
 .enerccio_stickynote-popup {
     width: 420px;                                            /* Increased from 280px for a larger, modern dashboard profile */
     height: auto;                                            /* Prevents stretching out across the screen space */
-    max-height: 380px;                                       /* Expanded from 250px to make readability much cleaner */
+    max-height: 440px;
     background-color: var(--SmartThemeBlurTintColor, #222);
     border: 1px solid var(--SmartThemeBorderColor, #444);
     border-radius: 10px;
@@ -56,6 +56,62 @@
     opacity: 0.6;
 }
 
+/* Tab Header and Options Settings */
+.enerccio_stickynote-action-row {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 0;
+}
+.enerccio_stickynote-action-row button {
+    padding: 2px 6px;
+    font-size: calc(var(--mainFontSize, 15px) * 0.7);
+    line-height: 1;
+    min-height: auto;
+    height: auto;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.enerccio_stickynote-tabs-header {
+    display: flex;
+    gap: 12px;
+    border-bottom: 1px solid var(--SmartThemeBorderColor, #444);
+    margin-bottom: 8px;
+    padding-bottom: 4px;
+}
+.enerccio_stickynote-tab {
+    cursor: pointer;
+    font-size: calc(var(--mainFontSize, 15px) * 0.85);
+    opacity: 0.6;
+    padding: 2px 4px;
+    user-select: none;
+    transition: opacity 100ms ease;
+}
+.enerccio_stickynote-tab:hover {
+    opacity: 0.9;
+}
+.enerccio_stickynote-tab.active {
+    font-weight: bold;
+    opacity: 1;
+    border-bottom: 2px solid var(--SmartThemeQuoteColor, #ffaa00);
+}
+
+.enerccio_stickynote-textareas-container {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    gap: 8px;
+}
+
+.enerccio_stickynote-textarea-container-active,
+.enerccio_stickynote-textarea-container-unused {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
 .enerccio_stickynote-textarea {
     width: 100%;
     flex: 1;                                                 /* Allows input box to naturally fill the restricted box height */
@@ -70,6 +126,35 @@
     font-family: var(--mainFontFamily, inherit);
     font-size: calc(var(--mainFontSize, 15px) * 0.95);
     line-height: calc(var(--mainFontSize, 15px) + 0.25rem);
+}
+
+.enerccio_stickynote-textarea-unused {
+    width: 100%;
+    flex: 1;
+    min-height: 180px;
+    resize: vertical;
+    background: var(--black30a, rgba(0, 0, 0, 0.3));
+    color: var(--SmartThemeBodyColor, #fff);
+    border: 1px solid var(--SmartThemeBorderColor, #444);
+    border-radius: 5px;
+    padding: 8px;
+
+    font-family: var(--mainFontFamily, inherit);
+    font-size: calc(var(--mainFontSize, 15px) * 0.95);
+    line-height: calc(var(--mainFontSize, 15px) + 0.25rem);
+}
+
+/* --- SINGLE VIEW OVERRIDE LAYOUT STRATEGIES --- */
+.enerccio_stickynote-popup.enerccio_stickynote-single-view-layout {
+    width: 840px;
+    max-height: 480px;
+}
+.enerccio_stickynote-single-view-layout .enerccio_stickynote-textareas-container {
+    flex-direction: row !important;
+}
+.enerccio_stickynote-single-view-layout .enerccio_stickynote-textarea-container-active,
+.enerccio_stickynote-single-view-layout .enerccio_stickynote-textarea-container-unused {
+    display: flex !important;
 }
 
 /* Chat History Message Action Bar button tracking */
@@ -90,7 +175,8 @@
     opacity: 0.9;
 }
 
-.enerccio_stickynote-textarea:read-only {
+.enerccio_stickynote-textarea:read-only,
+.enerccio_stickynote-textarea-unused:read-only {
     background: var(--black30a, rgba(0, 0, 0, 0.15)); /* Darker/fainter background tint */
     color: var(--SmartThemeEmColor, #aaa);            /* Uses the muted emphasis text color */
     border-color: color-mix(in srgb, var(--SmartThemeBorderColor, #444) 60%, transparent); /* Softens the border */
@@ -100,12 +186,15 @@
 
 /* Ensure that clicking or selecting text inside a read-only note doesn't light up the borders */
 .enerccio_stickynote-textarea:read-only:focus,
-.enerccio_stickynote-textarea:read-only:focus-visible {
+.enerccio_stickynote-textarea:read-only:focus-visible,
+.enerccio_stickynote-textarea-unused:read-only:focus,
+.enerccio_stickynote-textarea-unused:read-only:focus-visible {
     outline: none !important;
     border-color: color-mix(in srgb, var(--SmartThemeBorderColor, #444) 60%, transparent) !important;
 }
 
 /* Optional: Subtle adjustment to the resize handle indicator on read-only boxes */
-.enerccio_stickynote-textarea:read-only::-webkit-resizer {
+.enerccio_stickynote-textarea:read-only::-webkit-resizer,
+.enerccio_stickynote-textarea-unused:read-only::-webkit-resizer {
     opacity: 0.3;
 }

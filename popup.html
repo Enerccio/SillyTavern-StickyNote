@@ -3,9 +3,30 @@
         <span>Sticky Note</span>
         <span class="enerccio_stickynote-popup-close fa-solid fa-xmark"></span>
     </div>
-    <div class="enerccio_stickynote-popup-controls" style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px; font-size: calc(var(--mainFontSize, 15px) * 0.8); opacity: 0.85;">
-        <input type="checkbox" id="enerccio_stickynote-prepend-chk" style="margin: 0; cursor: pointer;" />
-        <label for="enerccio_stickynote-prepend-chk" style="margin: 0; cursor: pointer; color: var(--SmartThemeBodyColor, #fff); user-select: none;">Prepend to prompt</label>
+
+    <div class="enerccio_stickynote-popup-controls" style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; font-size: calc(var(--mainFontSize, 15px) * 0.8); opacity: 0.85;">
+        <div style="display: flex; align-items: center; gap: 6px;">
+            <input type="checkbox" id="enerccio_stickynote-prepend-chk" style="margin: 0; cursor: pointer;" />
+            <label for="enerccio_stickynote-prepend-chk" style="margin: 0; cursor: pointer; color: var(--SmartThemeBodyColor, #fff); user-select: none;">Prepend to prompt</label>
+        </div>
+
+        <div class="enerccio_stickynote-action-row">
+            <button type="button" class="menu_button enerccio_stickynote-swap-btn" title="Swap contents"><i class="fa-solid fa-right-left"></i> Swap</button>
+            <button type="button" class="menu_button enerccio_stickynote-single-btn" title="Side-by-side view"><i class="fa-solid fa-table-columns"></i> Single View</button>
+        </div>
     </div>
-    <textarea class="enerccio_stickynote-textarea"></textarea>
+
+    <div class="enerccio_stickynote-tabs-header">
+        <div class="enerccio_stickynote-tab active" data-tab="active">Active</div>
+        <div class="enerccio_stickynote-tab" data-tab="unused">Unused</div>
+    </div>
+
+    <div class="enerccio_stickynote-textareas-container">
+        <div class="enerccio_stickynote-textarea-container-active">
+            <textarea class="enerccio_stickynote-textarea"></textarea>
+        </div>
+        <div class="enerccio_stickynote-textarea-container-unused" style="display: none;">
+            <textarea class="enerccio_stickynote-textarea-unused"></textarea>
+        </div>
+    </div>
 </div>
